@@ -9,6 +9,7 @@ import sys
 
 from selenium.webdriver.chrome.webdriver import WebDriver
 import undetected_chromedriver as uc
+from cryptography.fernet import Fernet
 
 FLARESOLVERR_VERSION = None
 PLATFORM_VERSION = None
@@ -53,7 +54,9 @@ def create_proxy_extension(proxy: dict) -> str:
     host = parsed_url.hostname
     port = parsed_url.port
     username = proxy['username']
-    password = proxy['password']
+    key = Fernet.generate_key()
+    cipher_suite = Fernet(key)
+    password = cipher_suite.encrypt(proxy['password'].encode()).decode()
     manifest_json = """
     {
         "version": "1.0.0",
@@ -107,7 +110,7 @@ def create_proxy_extension(proxy: dict) -> str:
         host,
         port,
         username,
-        password
+        cipher_suite.decrypt(password.encode()).decode()
     )
 
     proxy_extension_dir = tempfile.mkdtemp()
